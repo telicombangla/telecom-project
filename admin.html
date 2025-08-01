@@ -1,1 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telicom Bangla - Admin Panel</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary: #4a6bff;
+            --secondary: #f8f9fa;
+            --dark: #343a40;
+            --light: #ffffff;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 0 15px;
+        }
+        
+        .sidebar {
+            background-color: var(--dark);
+            color: white;
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-header {
+            padding: 0 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-brand {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        
+        .sidebar-menu {
+            padding: 20px 0;
+        }
+        
+        .sidebar-menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-menu-item:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-menu-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar-menu-item.active {
+            background-color: var(--primary);
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .navbar {
+            background-color: var(--light);
+            padding: 15px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-user {
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-user img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .stat-title {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (min-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                overflow: hidden;
+            }
+            
+            .sidebar-brand, .sidebar-menu-item span {
+                display: none;
+            }
+            
+            .sidebar-menu-item {
+                justify-content: center;
+            }
+            
+            .sidebar-menu-item i {
+                margin-right: 0;
+                font-size: 1.2rem;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <!-- Firebase Config -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAwWkes6m7RUHMVbAri6ZZ1_Cs0pNGWIJk",
+            authDomain: "telicom-bangla-3afa4.firebaseapp.com",
+            projectId: "telicom-bangla-3afa4",
+            storageBucket: "telicom-bangla-3afa4.firebasestorage.app",
+            messagingSenderId: "635673237103",
+            appId: "1:635673237103:web:29a03af955e09c93815f9a"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+    </script>
 
+    <!-- Auth State Listener -->
+    <script>
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Check if user is admin
+                db.collection('admins').doc(user.uid).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            // User is admin, show content
+                            document.getElementById('auth-section').classList.add('hidden');
+                            document.getElementById('admin-content').classList.remove('hidden');
+                            loadDashboard();
+                        } else {
+                            // User is not admin
+                            alert('You are not authorized to access this panel');
+                            auth.signOut();
+                        }
+                    });
+            } else {
+                // User is signed out
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('admin-content').classList.add('hidden');
+            }
+        });
+    </script>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">Telicom Admin</div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="sidebar-menu-item active" onclick="loadDashboard()">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadPackages()">
+                <i class="fas fa-box"></i>
+                <span>Packages</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadUsers()">
+                <i class="fas fa-users"></i>
+                <span>Users</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadOrders()">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Orders</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadPayments()">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Payments</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadNotifications()">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </div>
+            <div class="sidebar-menu-item" onclick="loadAppInfo()">
+                <i class="fas fa-info-circle"></i>
+                <span>App Info</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="admin-content" style="display: none;">
+        <div class="navbar">
+            <div>
+                <h3 id="page-title">Dashboard</h3>
+            </div>
+            <div class="navbar-user">
+                <img src="https://via.placeholder.com/40" alt="Admin">
+                <span id="admin-name">Admin</span>
+                <button class="btn btn-danger btn-sm ml-3" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        
+        <!-- Content will be loaded here -->
+        <div id="content-area"></div>
+    </div>
+
+    <!-- Auth Section -->
+    <div id="auth-section">
+        <div class="container" style="max-width: 400px; margin: 50px auto;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Admin Login</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="admin-email" class="form-label">Email</label>
+                        <input type="email" id="admin-email" class="form-control" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="admin-password" class="form-label">Password</label>
+                        <input type="password" id="admin-password" class="form-control" placeholder="Enter your password">
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="adminLogin()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Package Modal -->
+    <div class="modal" id="add-package-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Package</h3>
+                <span class="close" onclick="hideModal('add-package-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="package-operator" class="form-label">Operator</label>
+                    <select id="package-operator" class="form-control">
+                        <option value="gp">Grameenphone</option>
+                        <option value="robi">Robi</option>
+                        <option value="airtel">Airtel</option>
+                        <option value="blink">Banglalink</option>
+                        <option value="teletalk">Teletalk</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="package-name" class="form-label">Package Name</label>
+                    <input type="text" id="package-name" class="form-control" placeholder="Enter package name">
+                </div>
+                <div class="form-group">
+                    <label for="package-price" class="form-label">Price (BDT)</label>
+                    <input type="number" id="package-price" class="form-control" placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="package-validity" class="form-label">Validity</label>
+                    <input type="text" id="package-validity" class="form-control" placeholder="e.g. 7 days, 1 month">
+                </div>
+                <div class="form-group">
+                    <label for="package-division" class="form-label">Division</label>
+                    <select id="package-division" class="form-control">
+                        <option value="all">All Divisions</option>
+                        <option value="dhaka">Dhaka</option>
+                        <option value="chittagong">Chittagong</option>
+                        <option value="khulna">Khulna</option>
+                        <option value="rajshahi">Rajshahi</option>
+                        <option value="barisal">Barisal</option>
+                        <option value="sylhet">Sylhet</option>
+                        <option value="rangpur">Rangpur</option>
+                        <option value="mymensingh">Mymensingh</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="savePackage()">Save Package</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Package Modal -->
+    <div class="modal" id="edit-package-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Package</h3>
+                <span class="close" onclick="hideModal('edit-package-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-package-id">
+                <div class="form-group">
+                    <label for="edit-package-operator" class="form-label">Operator</label>
+                    <select id="edit-package-operator" class="form-control">
+                        <option value="gp">Grameenphone</option>
+                        <option value="robi">Robi</option>
+                        <option value="airtel">Airtel</option>
+                        <option value="blink">Banglalink</option>
+                        <option value="teletalk">Teletalk</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-package-name" class="form-label">Package Name</label>
+                    <input type="text" id="edit-package-name" class="form-control" placeholder="Enter package name">
+                </div>
+                <div class="form-group">
+                    <label for="edit-package-price" class="form-label">Price (BDT)</label>
+                    <input type="number" id="edit-package-price" class="form-control" placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="edit-package-validity" class="form-label">Validity</label>
+                    <input type="text" id="edit-package-validity" class="form-control" placeholder="e.g. 7 days, 1 month">
+                </div>
+                <div class="form-group">
+                    <label for="edit-package-division" class="form-label">Division</label>
+                    <select id="edit-package-division" class="form-control">
+                        <option value="all">All Divisions</option>
+                        <option value="dhaka">Dhaka</option>
+                        <option value="chittagong">Chittagong</option>
+                        <option value="khulna">Khulna</option>
+                        <option value="rajshahi">Rajshahi</option>
+                        <option value="barisal">Barisal</option>
+                        <option value="sylhet">Sylhet</option>
+                        <option value="rangpur">Rangpur</option>
+                        <option value="mymensingh">Mymensingh</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="updatePackage()">Update Package</button>
+                <button class="btn btn-danger btn-block mt-2" onclick="deletePackage()">Delete Package</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal" id="edit-user-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit User</h3>
+                <span class="close" onclick="hideModal('edit-user-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="edit-user-name" class="form-label">Name</label>
+                    <input type="text" id="edit-user-name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-email" class="form-label">Email</label>
+                    <input type="email" id="edit-user-email" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-phone" class="form-label">Phone</label>
+                    <input type="tel" id="edit-user-phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-balance" class="form-label">Balance (BDT)</label>
+                    <input type="number" id="edit-user-balance" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-status" class="form-label">Status</label>
+                    <select id="edit-user-status" class="form-control">
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="updateUser()">Update User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="order-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Order Details</h3>
+                <span class="close" onclick="hideModal('order-details-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="order-id">
+                <div class="form-group">
+                    <label class="form-label">Package Name</label>
+                    <input type="text" id="order-package-name" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price</label>
+                    <input type="text" id="order-price" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Recipient Number</label>
+                    <input type="text" id="order-recipient-number" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Division</label>
+                    <input type="text" id="order-division" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Activation Date</label>
+                    <input type="text" id="order-activation-date" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="order-status" class="form-control">
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="updateOrderStatus()">Update Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div class="modal" id="payment-details-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Payment Details</h3>
+                <span class="close" onclick="hideModal('payment-details-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="payment-id">
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <input type="text" id="payment-amount" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Method</label>
+                    <input type="text" id="payment-method" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sender Number</label>
+                    <input type="text" id="payment-sender-number" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Transaction ID</label>
+                    <input type="text" id="payment-transaction-id" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="payment-status" class="form-control">
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="updatePaymentStatus()">Update Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Notification Modal -->
+    <div class="modal" id="send-notification-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Send Notification</h3>
+                <span class="close" onclick="hideModal('send-notification-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="notification-title" class="form-label">Title</label>
+                    <input type="text" id="notification-title" class="form-control" placeholder="Enter notification title">
+                </div>
+                <div class="form-group">
+                    <label for="notification-message" class="form-label">Message</label>
+                    <textarea id="notification-message" class="form-control" rows="3" placeholder="Enter notification message"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="notification-user" class="form-label">Send To</label>
+                    <select id="notification-user" class="form-control">
+                        <option value="all">All Users</option>
+                        <option value="specific">Specific User</option>
+                    </select>
+                </div>
+                <div class="form-group" id="specific-user-group" style="display: none;">
+                    <label for="specific-user-id" class="form-label">User Email</label>
+                    <input type="text" id="specific-user-id" class="form-control" placeholder="Enter user email">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="sendNotification()">Send Notification</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Info Modal -->
+    <div class="modal" id="app-info-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">App Information</h3>
+                <span class="close" onclick="hideModal('app-info-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="app-version" class="form-label">App Version</label>
+                    <input type="text" id="app-version" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="app-update-url" class="form-label">Update URL</label>
+                    <input type="text" id="app-update-url" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="app-maintenance" class="form-label">Maintenance Mode</label>
+                    <select id="app-maintenance" class="form-control">
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="app-maintenance-message" class="form-label">Maintenance Message</label>
+                    <textarea id="app-maintenance-message" class="form-control" rows="3"></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="updateAppInfo()">Update Information</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Admin login
+        function adminLogin() {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    // Login successful, auth state listener will handle the rest
+                })
+                .catch(error => {
+                    alert('Login failed: ' + error.message);
+                });
+        }
+        
+        // Logout
+        function logout() {
+            auth.signOut().then(() => {
+                alert('Logged out successfully');
+            }).catch(error => {
+                alert('Logout failed: ' + error.message);
+            });
+        }
+        
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Load dashboard
+        function loadDashboard() {
+            document.getElementById('page-title').textContent = 'Dashboard';
+            updateActiveMenu('dashboard');
+            
+            // Load stats
+            Promise.all([
+                db.collection('users').get(),
+                db.collection('orders').get(),
+                db.collection('paymentRequests').get(),
+                db.collection('packages').get()
+            ]).then(results => {
+                const usersCount = results[0].size;
+                const ordersCount = results[1].size;
+                const paymentsCount = results[2].size;
+                const packagesCount = results[3].size;
+                
+                // Calculate total revenue
+                let totalRevenue = 0;
+                results[1].forEach(doc => {
+                    totalRevenue += doc.data().packagePrice || 0;
+                });
+                
+                const content = `
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-title">Total Users</div>
+                            <div class="stat-value">${usersCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Total Orders</div>
+                            <div class="stat-value">${ordersCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Total Payments</div>
+                            <div class="stat-value">${paymentsCount}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Total Revenue</div>
+                            <div class="stat-value">৳${totalRevenue.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Orders</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Package</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-orders">
+                                    <!-- Recent orders will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('content-area').innerHTML = content;
+                
+                // Load recent orders
+                db.collection('orders')
+                    .orderBy('createdAt', 'desc')
+                    .limit(5)
+                    .get()
+                    .then(querySnapshot => {
+                        const ordersTable = document.getElementById('recent-orders');
+                        ordersTable.innerHTML = '';
+                        
+                        if (querySnapshot.empty) {
+                            ordersTable.innerHTML = '<tr><td colspan="5">No recent orders</td></tr>';
+                            return;
+                        }
+                        
+                        querySnapshot.forEach(doc => {
+                            const order = doc.data();
+                            const statusClass = getStatusClass(order.status);
+                            
+                            ordersTable.innerHTML += `
+                                <tr>
+                                    <td>${doc.id.substring(0, 8)}</td>
+                                    <td>${order.packageName}</td>
+                                    <td>৳${order.packagePrice}</td>
+                                    <td><span class="badge ${statusClass}">${order.status}</span></td>
+                                    <td><button class="btn btn-sm btn-primary" onclick="viewOrderDetails('${doc.id}')">View</button></td>
+                                </tr>
+                            `;
+                        });
+                    });
+            });
+        }
+        
+        // Load packages
+        function loadPackages() {
+            document.getElementById('page-title').textContent = 'Packages';
+            updateActiveMenu('packages');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Packages</h3>
+                        <button class="btn btn-primary" onclick="showModal('add-package-modal')">Add Package</button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Operator</th>
+                                    <th>Package Name</th>
+                                    <th>Price</th>
+                                    <th>Validity</th>
+                                    <th>Division</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packages-list">
+                                <!-- Packages will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load packages
+            db.collection('packages').get()
+                .then(querySnapshot => {
+                    const packagesList = document.getElementById('packages-list');
+                    packagesList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        packagesList.innerHTML = '<tr><td colspan="6">No packages found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const packageData = doc.data();
+                        const operatorName = getOperatorName(packageData.operator);
+                        
+                        packagesList.innerHTML += `
+                            <tr>
+                                <td>${operatorName}</td>
+                                <td>${packageData.name}</td>
+                                <td>৳${packageData.price}</td>
+                                <td>${packageData.validity}</td>
+                                <td>${packageData.division === 'all' ? 'All' : packageData.division}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editPackage('${doc.id}')">Edit</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load users
+        function loadUsers() {
+            document.getElementById('page-title').textContent = 'Users';
+            updateActiveMenu('users');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Users</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-list">
+                                <!-- Users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load users
+            db.collection('users').get()
+                .then(querySnapshot => {
+                    const usersList = document.getElementById('users-list');
+                    usersList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        usersList.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const userData = doc.data();
+                        const statusClass = userData.status === 'blocked' ? 'badge-danger' : 'badge-success';
+                        const statusText = userData.status === 'blocked' ? 'Blocked' : 'Active';
+                        
+                        usersList.innerHTML += `
+                            <tr>
+                                <td>${userData.name || 'N/A'}</td>
+                                <td>${userData.email}</td>
+                                <td>${userData.phone || 'N/A'}</td>
+                                <td>৳${userData.balance?.toFixed(2) || '0.00'}</td>
+                                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editUser('${doc.id}')">Edit</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load orders
+        function loadOrders() {
+            document.getElementById('page-title').textContent = 'Orders';
+            updateActiveMenu('orders');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Orders</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Package</th>
+                                    <th>Amount</th>
+                                    <th>Recipient</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-list">
+                                <!-- Orders will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load orders
+            db.collection('orders')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(querySnapshot => {
+                    const ordersList = document.getElementById('orders-list');
+                    ordersList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        ordersList.innerHTML = '<tr><td colspan="7">No orders found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const order = doc.data();
+                        const statusClass = getStatusClass(order.status);
+                        const date = order.createdAt?.toDate().toLocaleDateString() || 'N/A';
+                        
+                        ordersList.innerHTML += `
+                            <tr>
+                                <td>${doc.id.substring(0, 8)}</td>
+                                <td>${order.packageName}</td>
+                                <td>৳${order.packagePrice}</td>
+                                <td>${order.recipientNumber}</td>
+                                <td><span class="badge ${statusClass}">${order.status}</span></td>
+                                <td>${date}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="viewOrderDetails('${doc.id}')">View</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load payments
+        function loadPayments() {
+            document.getElementById('page-title').textContent = 'Payments';
+            updateActiveMenu('payments');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Payment Requests</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Amount</th>
+                                    <th>Method</th>
+                                    <th>Sender</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-list">
+                                <!-- Payments will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load payments
+            db.collection('paymentRequests')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(querySnapshot => {
+                    const paymentsList = document.getElementById('payments-list');
+                    paymentsList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        paymentsList.innerHTML = '<tr><td colspan="7">No payment requests found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const payment = doc.data();
+                        const statusClass = getPaymentStatusClass(payment.status);
+                        const date = payment.createdAt?.toDate().toLocaleDateString() || 'N/A';
+                        
+                        paymentsList.innerHTML += `
+                            <tr>
+                                <td>${payment.transactionId || 'N/A'}</td>
+                                <td>৳${payment.amount}</td>
+                                <td>${payment.method}</td>
+                                <td>${payment.senderNumber}</td>
+                                <td><span class="badge ${statusClass}">${payment.status}</span></td>
+                                <td>${date}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="viewPaymentDetails('${doc.id}')">View</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load notifications
+        function loadNotifications() {
+            document.getElementById('page-title').textContent = 'Notifications';
+            updateActiveMenu('notifications');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Notifications</h3>
+                        <button class="btn btn-primary" onclick="showModal('send-notification-modal')">Send Notification</button>
+                    </div>
+                    <div class="card-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifications-list">
+                                <!-- Notifications will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load notifications
+            db.collection('notifications')
+                .orderBy('createdAt', 'desc')
+                .get()
+                .then(querySnapshot => {
+                    const notificationsList = document.getElementById('notifications-list');
+                    notificationsList.innerHTML = '';
+                    
+                    if (querySnapshot.empty) {
+                        notificationsList.innerHTML = '<tr><td colspan="4">No notifications found</td></tr>';
+                        return;
+                    }
+                    
+                    querySnapshot.forEach(doc => {
+                        const notification = doc.data();
+                        const date = notification.createdAt?.toDate().toLocaleString() || 'N/A';
+                        const status = notification.read ? 'Read' : 'Unread';
+                        const statusClass = notification.read ? 'badge-success' : 'badge-warning';
+                        
+                        notificationsList.innerHTML += `
+                            <tr>
+                                <td>${notification.title}</td>
+                                <td>${notification.message}</td>
+                                <td>${date}</td>
+                                <td><span class="badge ${statusClass}">${status}</span></td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+        
+        // Load app info
+        function loadAppInfo() {
+            document.getElementById('page-title').textContent = 'App Information';
+            updateActiveMenu('app-info');
+            
+            const content = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">App Information</h3>
+                        <button class="btn btn-primary" onclick="showModal('app-info-modal')">Edit Info</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">App Version</label>
+                            <input type="text" id="display-app-version" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Update URL</label>
+                            <input type="text" id="display-app-update-url" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Maintenance Mode</label>
+                            <input type="text" id="display-app-maintenance" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Maintenance Message</label>
+                            <textarea id="display-app-maintenance-message" class="form-control" rows="3" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('content-area').innerHTML = content;
+            
+            // Load app info
+            db.collection('appInfo').doc('current').get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const appInfo = doc.data();
+                        document.getElementById('display-app-version').value = appInfo.version || '1.0.0';
+                        document.getElementById('display-app-update-url').value = appInfo.updateUrl || '';
+                        document.getElementById('display-app-maintenance').value = appInfo.maintenance ? 'Enabled' : 'Disabled';
+                        document.getElementById('display-app-maintenance-message').value = appInfo.maintenanceMessage || '';
+                        
+                        // Also set values in edit modal
+                        document.getElementById('app-version').value = appInfo.version || '1.0.0';
+                        document.getElementById('app-update-url').value = appInfo.updateUrl || '';
+                        document.getElementById('app-maintenance').value = appInfo.maintenance ? 'true' : 'false';
+                        document.getElementById('app-maintenance-message').value = appInfo.maintenanceMessage || '';
+                    }
+                });
+        }
+        
+        // Update active menu item
+        function updateActiveMenu(activeItem) {
+            document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            if (activeItem === 'dashboard') {
+                document.querySelector('.sidebar-menu-item:nth-child(1)').classList.add('active');
+            } else if (activeItem === 'packages') {
+                document.querySelector('.sidebar-menu-item:nth-child(2)').classList.add('active');
+            } else if (activeItem === 'users') {
+                document.querySelector('.sidebar-menu-item:nth-child(3)').classList.add('active');
+            } else if (activeItem === 'orders') {
+                document.querySelector('.sidebar-menu-item:nth-child(4)').classList.add('active');
+            } else if (activeItem === 'payments') {
+                document.querySelector('.sidebar-menu-item:nth-child(5)').classList.add('active');
+            } else if (activeItem === 'notifications') {
+                document.querySelector('.sidebar-menu-item:nth-child(6)').classList.add('active');
+            } else if (activeItem === 'app-info') {
+                document.querySelector('.sidebar-menu-item:nth-child(7)').classList.add('active');
+            }
+        }
+        
+        // Save package
+        function savePackage() {
+            const operator = document.getElementById('package-operator').value;
+            const name = document.getElementById('package-name').value;
+            const price = parseFloat(document.getElementById('package-price').value);
+            const validity = document.getElementById('package-validity').value;
+            const division = document.getElementById('package-division').value;
+            
+            if (!name || !price || !validity) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            db.collection('packages').add({
+                operator: operator,
+                name: name,
+                price: price,
+                validity: validity,
+                division: division,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                alert('Package added successfully');
+                hideModal('add-package-modal');
+                loadPackages();
+            })
+            .catch(error => {
+                alert('Error adding package: ' + error.message);
+            });
+        }
+        
+        // Edit package
+        function editPackage(packageId) {
+            db.collection('packages').doc(packageId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const packageData = doc.data();
+                        document.getElementById('edit-package-id').value = packageId;
+                        document.getElementById('edit-package-operator').value = packageData.operator;
+                        document.getElementById('edit-package-name').value = packageData.name;
+                        document.getElementById('edit-package-price').value = packageData.price;
+                        document.getElementById('edit-package-validity').value = packageData.validity;
+                        document.getElementById('edit-package-division').value = packageData.division || 'all';
+                        
+                        showModal('edit-package-modal');
+                    }
+                });
+        }
+        
+        // Update package
+        function updatePackage() {
+            const packageId = document.getElementById('edit-package-id').value;
+            const operator = document.getElementById('edit-package-operator').value;
+            const name = document.getElementById('edit-package-name').value;
+            const price = parseFloat(document.getElementById('edit-package-price').value);
+            const validity = document.getElementById('edit-package-validity').value;
+            const division = document.getElementById('edit-package-division').value;
+            
+            if (!name || !price || !validity) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            db.collection('packages').doc(packageId).update({
+                operator: operator,
+                name: name,
+                price: price,
+                validity: validity,
+                division: division
+            })
+            .then(() => {
+                alert('Package updated successfully');
+                hideModal('edit-package-modal');
+                loadPackages();
+            })
+            .catch(error => {
+                alert('Error updating package: ' + error.message);
+            });
+        }
+        
+        // Delete package
+        function deletePackage() {
+            if (!confirm('Are you sure you want to delete this package?')) {
+                return;
+            }
+            
+            const packageId = document.getElementById('edit-package-id').value;
+            
+            db.collection('packages').doc(packageId).delete()
+                .then(() => {
+                    alert('Package deleted successfully');
+                    hideModal('edit-package-modal');
+                    loadPackages();
+                })
+                .catch(error => {
+                    alert('Error deleting package: ' + error.message);
+                });
+        }
+        
+        // Edit user
+        function editUser(userId) {
+            db.collection('users').doc(userId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        document.getElementById('edit-user-id').value = userId;
+                        document.getElementById('edit-user-name').value = userData.name || '';
+                        document.getElementById('edit-user-email').value = userData.email || '';
+                        document.getElementById('edit-user-phone').value = userData.phone || '';
+                        document.getElementById('edit-user-balance').value = userData.balance || 0;
+                        document.getElementById('edit-user-status').value = userData.status || 'active';
+                        
+                        showModal('edit-user-modal');
+                    }
+                });
+        }
+        
+        // Update user
+        function updateUser() {
+            const userId = document.getElementById('edit-user-id').value;
+            const name = document.getElementById('edit-user-name').value;
+            const phone = document.getElementById('edit-user-phone').value;
+            const balance = parseFloat(document.getElementById('edit-user-balance').value);
+            const status = document.getElementById('edit-user-status').value;
+            
+            db.collection('users').doc(userId).update({
+                name: name,
+                phone: phone,
+                balance: balance,
+                status: status
+            })
+            .then(() => {
+                alert('User updated successfully');
+                hideModal('edit-user-modal');
+                loadUsers();
+            })
+            .catch(error => {
+                alert('Error updating user: ' + error.message);
+            });
+        }
+        
+        // View order details
+        function viewOrderDetails(orderId) {
+            db.collection('orders').doc(orderId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const order = doc.data();
+                        document.getElementById('order-id').value = orderId;
+                        document.getElementById('order-package-name').value = order.packageName;
+                        document.getElementById('order-price').value = '৳' + order.packagePrice;
+                        document.getElementById('order-recipient-number').value = order.recipientNumber;
+                        document.getElementById('order-division').value = order.division;
+                        document.getElementById('order-activation-date').value = order.activationDate;
+                        document.getElementById('order-status').value = order.status || 'pending';
+                        
+                        showModal('order-details-modal');
+                    }
+                });
+        }
+        
+        // Update order status
+        function updateOrderStatus() {
+            const orderId = document.getElementById('order-id').value;
+            const status = document.getElementById('order-status').value;
+            
+            db.collection('orders').doc(orderId).update({
+                status: status
+            })
+            .then(() => {
+                alert('Order status updated successfully');
+                hideModal('order-details-modal');
+                loadOrders();
+            })
+            .catch(error => {
+                alert('Error updating order status: ' + error.message);
+            });
+        }
+        
+        // View payment details
+        function viewPaymentDetails(paymentId) {
+            db.collection('paymentRequests').doc(paymentId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const payment = doc.data();
+                        document.getElementById('payment-id').value = paymentId;
+                        document.getElementById('payment-amount').value = '৳' + payment.amount;
+                        document.getElementById('payment-method').value = payment.method;
+                        document.getElementById('payment-sender-number').value = payment.senderNumber;
+                        document.getElementById('payment-transaction-id').value = payment.transactionId;
+                        document.getElementById('payment-status').value = payment.status || 'pending';
+                        
+                        showModal('payment-details-modal');
+                    }
+                });
+        }
+        
+        // Update payment status
+        function updatePaymentStatus() {
+            const paymentId = document.getElementById('payment-id').value;
+            const status = document.getElementById('payment-status').value;
+            
+            db.collection('paymentRequests').doc(paymentId).update({
+                status: status
+            })
+            .then(() => {
+                // If payment is verified, update user balance
+                if (status === 'verified') {
+                    return db.collection('paymentRequests').doc(paymentId).get()
+                        .then(doc => {
+                            const payment = doc.data();
+                            return db.collection('users').where('email', '==', payment.userEmail).get();
+                        })
+                        .then(querySnapshot => {
+                            if (!querySnapshot.empty) {
+                                const userDoc = querySnapshot.docs[0];
+                                const userData = userDoc.data();
+                                const newBalance = (userData.balance || 0) + parseFloat(payment.amount);
+                                
+                                return userDoc.ref.update({
+                                    balance: newBalance
+                                });
+                            }
+                        });
+                }
+            })
+            .then(() => {
+                alert('Payment status updated successfully');
+                hideModal('payment-details-modal');
+                loadPayments();
+            })
+            .catch(error => {
+                alert('Error updating payment status: ' + error.message);
+            });
+        }
+        
+        // Send notification
+        function sendNotification() {
+            const title = document.getElementById('notification-title').value;
+            const message = document.getElementById('notification-message').value;
+            const sendTo = document.getElementById('notification-user').value;
+            const specificUser = document.getElementById('specific-user-id').value;
+            
+            if (!title || !message) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            if (sendTo === 'specific' && !specificUser) {
+                alert('Please enter user email');
+                return;
+            }
+            
+            const notificationData = {
+                title: title,
+                message: message,
+                read: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (sendTo === 'all') {
+                // Send to all users
+                db.collection('users').get()
+                    .then(querySnapshot => {
+                        const batch = db.batch();
+                        
+                        querySnapshot.forEach(doc => {
+                            const notificationRef = db.collection('notifications').doc();
+                            batch.set(notificationRef, {
+                                ...notificationData,
+                                userId: doc.id
+                            });
+                        });
+                        
+                        return batch.commit();
+                    })
+                    .then(() => {
+                        alert('Notification sent to all users');
+                        hideModal('send-notification-modal');
+                        loadNotifications();
+                    });
+            } else {
+                // Send to specific user
+                db.collection('users').where('email', '==', specificUser).get()
+                    .then(querySnapshot => {
+                        if (querySnapshot.empty) {
+                            throw new Error('User not found');
+                        }
+                        
+                        const userId = querySnapshot.docs[0].id;
+                        return db.collection('notifications').add({
+                            ...notificationData,
+                            userId: userId
+                        });
+                    })
+                    .then(() => {
+                        alert('Notification sent to user');
+                        hideModal('send-notification-modal');
+                        loadNotifications();
+                    })
+                    .catch(error => {
+                        alert('Error sending notification: ' + error.message);
+                    });
+            }
+        }
+        
+        // Update app info
+        function updateAppInfo() {
+            const version = document.getElementById('app-version').value;
+            const updateUrl = document.getElementById('app-update-url').value;
+            const maintenance = document.getElementById('app-maintenance').value === 'true';
+            const maintenanceMessage = document.getElementById('app-maintenance-message').value;
+            
+            db.collection('appInfo').doc('current').set({
+                version: version,
+                updateUrl: updateUrl,
+                maintenance: maintenance,
+                maintenanceMessage: maintenanceMessage,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true })
+            .then(() => {
+                alert('App information updated successfully');
+                hideModal('app-info-modal');
+                loadAppInfo();
+            })
+            .catch(error => {
+                alert('Error updating app information: ' + error.message);
+            });
+        }
+        
+        // Helper functions
+        function getOperatorName(operatorCode) {
+            const operators = {
+                gp: 'Grameenphone',
+                robi: 'Robi',
+                airtel: 'Airtel',
+                blink: 'Banglalink',
+                teletalk: 'Teletalk'
+            };
+            
+            return operators[operatorCode] || operatorCode;
+        }
+        
+        function getStatusClass(status) {
+            switch (status) {
+                case 'completed':
+                    return 'badge-success';
+                case 'failed':
+                    return 'badge-danger';
+                default:
+                    return 'badge-warning';
+            }
+        }
+        
+        function getPaymentStatusClass(status) {
+            switch (status) {
+                case 'verified':
+                    return 'badge-success';
+                case 'rejected':
+                    return 'badge-danger';
+                default:
+                    return 'badge-warning';
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('notification-user').addEventListener('change', function() {
+            if (this.value === 'specific') {
+                document.getElementById('specific-user-group').style.display = 'block';
+            } else {
+                document.getElementById('specific-user-group').style.display = 'none';
+            }
+        });
+        
+        // Initialize
+        if (auth.currentUser) {
+            // Auth state listener will handle the rest
+        }
+    </script>
+</body>
+</html>
